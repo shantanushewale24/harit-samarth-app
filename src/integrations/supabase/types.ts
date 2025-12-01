@@ -14,7 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      subsidies: {
+        Row: {
+          amount: string
+          created_at: string
+          deadline: string
+          description: string
+          eligibility: string
+          id: string
+          status: string
+          title: string
+          title_hi: string
+          updated_at: string
+        }
+        Insert: {
+          amount: string
+          created_at?: string
+          deadline: string
+          description: string
+          eligibility: string
+          id?: string
+          status: string
+          title: string
+          title_hi: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: string
+          created_at?: string
+          deadline?: string
+          description?: string
+          eligibility?: string
+          id?: string
+          status?: string
+          title?: string
+          title_hi?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

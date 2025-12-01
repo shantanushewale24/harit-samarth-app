@@ -1,47 +1,51 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, IndianRupee, Calendar, ArrowRight } from "lucide-react";
+import { FileText, IndianRupee, Calendar, ArrowRight, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+interface Subsidy {
+  id: string;
+  title: string;
+  title_hi: string;
+  amount: string;
+  description: string;
+  eligibility: string;
+  deadline: string;
+  status: string;
+}
 
 const SubsidyInfo = () => {
-  const subsidies = [
-    {
-      title: "PM-KISAN Scheme",
-      titleHi: "पीएम-किसान योजना",
-      amount: "₹6,000/year",
-      description: "Direct income support to all farmer families",
-      eligibility: "All landholding farmers",
-      deadline: "Ongoing",
-      status: "Active"
-    },
-    {
-      title: "Soil Health Card",
-      titleHi: "मृदा स्वास्थ्य कार्ड",
-      amount: "Free",
-      description: "Get soil testing and recommendations",
-      eligibility: "All farmers",
-      deadline: "Apply anytime",
-      status: "Active"
-    },
-    {
-      title: "Drip Irrigation Subsidy",
-      titleHi: "ड्रिप सिंचाई अनुदान",
-      amount: "Up to 55%",
-      description: "Financial support for micro-irrigation",
-      eligibility: "Small & marginal farmers",
-      deadline: "March 2024",
-      status: "Limited"
-    },
-    {
-      title: "Crop Insurance",
-      titleHi: "फसल बीमा योजना",
-      amount: "2% premium",
-      description: "Protection against crop loss",
-      eligibility: "All farmers",
-      deadline: "Season-wise",
-      status: "Active"
-    }
-  ];
+  const [subsidies, setSubsidies] = useState<Subsidy[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchSubsidies = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('subsidies')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setSubsidies(data || []);
+      } catch (error) {
+        console.error('Error fetching subsidies:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load subsidy information",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSubsidies();
+  }, [toast]);
 
   return (
     <section className="py-16 bg-background">
@@ -55,9 +59,14 @@ const SubsidyInfo = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-          {subsidies.map((subsidy, index) => (
-            <Card key={index} className="shadow-soft hover:shadow-strong transition-all duration-300 hover:-translate-y-1">
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+            {subsidies.map((subsidy) => (
+            <Card key={subsidy.id} className="shadow-soft hover:shadow-strong transition-all duration-300 hover:-translate-y-1">
               <CardHeader>
                 <div className="flex items-start justify-between mb-2">
                   <FileText className="h-8 w-8 text-primary" />
@@ -69,7 +78,7 @@ const SubsidyInfo = () => {
                   </Badge>
                 </div>
                 <CardTitle className="text-lg line-clamp-2">{subsidy.title}</CardTitle>
-                <CardDescription className="text-sm">{subsidy.titleHi}</CardDescription>
+                <CardDescription className="text-sm">{subsidy.title_hi}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -100,8 +109,9 @@ const SubsidyInfo = () => {
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         <div className="text-center mt-12">
           <Button size="lg" variant="default">
