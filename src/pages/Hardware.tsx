@@ -1,17 +1,17 @@
 import Navbar from "@/components/Navbar";
-import Hero from "@/components/Hero";
+import HardwareModule from "@/components/HardwareModule";
 import ChatbotWidget from "@/components/ChatbotWidget";
 
-const Index = () => {
+const Hardware = () => {
   return (
     <main className="min-h-screen">
       <Navbar />
       <div className="pt-16">
-        <Hero />
+        <HardwareModule />
         <ChatbotWidget />
       </div>
     </main>
   );
 };
 
-export default Index;
+export default Hardware;

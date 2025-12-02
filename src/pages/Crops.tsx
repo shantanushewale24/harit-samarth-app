@@ -1,17 +1,17 @@
 import Navbar from "@/components/Navbar";
-import Hero from "@/components/Hero";
+import CropRecommendation from "@/components/CropRecommendation";
 import ChatbotWidget from "@/components/ChatbotWidget";
 
-const Index = () => {
+const Crops = () => {
   return (
     <main className="min-h-screen">
       <Navbar />
       <div className="pt-16">
-        <Hero />
+        <CropRecommendation />
         <ChatbotWidget />
       </div>
     </main>
   );
 };
 
-export default Index;
+export default Crops;

@@ -1,17 +1,17 @@
 import Navbar from "@/components/Navbar";
-import Hero from "@/components/Hero";
+import SubsidyInfo from "@/components/SubsidyInfo";
 import ChatbotWidget from "@/components/ChatbotWidget";
 
-const Index = () => {
+const Subsidies = () => {
   return (
     <main className="min-h-screen">
       <Navbar />
       <div className="pt-16">
-        <Hero />
+        <SubsidyInfo />
         <ChatbotWidget />
       </div>
     </main>
   );
 };
 
-export default Index;
+export default Subsidies;
