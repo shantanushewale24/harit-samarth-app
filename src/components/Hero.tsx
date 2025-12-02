@@ -1,8 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { Sprout, MessageSquare, FileText, CloudSun } from "lucide-react";
+import { Sprout, MessageSquare } from "lucide-react";
 import heroImage from "@/assets/hero-farmland.jpg";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const Hero = () => {
+  const { t } = useTranslation();
+
   return (
     <section id="home" className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
       <div 
@@ -18,20 +21,20 @@ const Hero = () => {
             Agri bio
           </h1>
           <p className="text-xl md:text-2xl text-white/95 mb-4 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-100">
-            Your Smart Agriculture Partner
+            {t('hero.title')}
           </p>
           <p className="text-lg text-white/90 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200">
-            IoT-powered farming with real-time soil monitoring, crop recommendations, hardware integration, and multilingual support in Hindi, Marathi, and English.
+            {t('hero.subtitle')}
           </p>
           
           <div className="flex flex-wrap gap-4 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300">
             <Button size="lg" variant="default" className="bg-harvest text-harvest-foreground hover:bg-harvest/90 shadow-strong">
               <Sprout className="mr-2 h-5 w-5" />
-              Get Started
+              {t('hero.cta')}
             </Button>
             <Button size="lg" variant="outline" className="bg-white/10 text-white border-white/30 hover:bg-white/20 backdrop-blur-sm">
               <MessageSquare className="mr-2 h-5 w-5" />
-              Chat with Expert
+              {t('hero.subtitle')}
             </Button>
           </div>
         </div>
