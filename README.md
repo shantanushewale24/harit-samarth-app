@@ -1,73 +1,136 @@
-# Welcome to your Lovable project
+# Harit Samarth — Climate-Smart Advisory Platform
 
-## Project info
+Harit Samarth helps Indian farmers make data-backed decisions about crop planning, soil health, subsidy access, and IoT hardware usage. The platform combines a Vite/React frontend, a Flask backend with dual MySQL + CSV persistence, Supabase integrations, and an internal machine-learning pipeline for crop recommendations.
 
-**URL**: https://lovable.dev/projects/438158a8-0f07-4998-9593-b1094e419f2f
+---
 
-## How can I edit this code?
+## 1. Features
+- Climate-aware UX with hero, chatbot widget, hardware showcases, and regional insights.
+- Interactive modules for crop recommendations, soil health reports, subsidy discovery, and soil hardware telemetry.
+- Backend ingestion pipeline that stores every soil-health analysis in both MySQL and CSV, with automatic fallback when the database is unavailable.
+- Supabase integration for authentication and future data sync.
+- Regional crop recommendation dataset (`data/crop_recommendations.csv`) covering Indian agro-climatic zones.
+- Random Forest classifier (`backend/train_crop_model.py`) that learns from regional climate, soil, and risk features to propose the best crop.
+- WeatherAPI-powered, location-aware crop recommendations surfaced via the React UI with detailed crop advisory pages.
+- Diagnostics toolkit (e.g., `backend/debug_mysql.py`) for validating infrastructure readiness.
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+## 2. Architecture Overview
+| Layer    | Technology & Tools                                                                 | Notes |
+|----------|-------------------------------------------------------------------------------------|-------|
+| Frontend | React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui                                | SPA served through Vite dev server or static host |
+| Backend  | Flask, mysql-connector-python, python-dotenv, logging                               | Soil health API, ML inference hooks, diagnostics |
+| Data     | MySQL (primary), CSV (redundant logging), Supabase                                  | Dual-write ensures offline durability |
+| ML       | pandas, scikit-learn, joblib                                                        | RandomForestClassifier persisted under `backend/models/` |
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/438158a8-0f07-4998-9593-b1094e419f2f) and start prompting.
+Frontend assets live in `src/`. Backend, diagnostics, and ML assets reside under `backend/`.
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## 3. Algorithms & Pipelines
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 3.1 Soil Health Flow
+1. **Input normalization**: Nutrient, moisture, and sensor metadata are validated and scaled.
+2. **Dual-write persistence**: Records are inserted into MySQL. If the DB is unreachable, the API automatically falls back to CSV so no submission is lost.
+3. **Rule-based guidance**: Baseline heuristics produce immediate textual advice while the ML model (below) provides region-aware crop suggestions when available.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 3.2 Crop Recommendation Model
+- **Dataset**: `data/crop_recommendations.csv` tracks region, state, climate zone, rainfall/temperature ranges, humidity, soil profile, irrigation access, altitude, and drought/flood/wind risks. The label is `recommended_crop`.
+- **Preprocessing**: `ColumnTransformer` + `OneHotEncoder(handle_unknown="ignore")` encode categorical dimensions while numeric bands pass through unchanged.
+- **Model**: `RandomForestClassifier` (300 trees, max depth 12, `class_weight="balanced"`, seed 42). It handles mixed categorical inputs and remains interpretable for agronomists.
+- **Training**: `python backend/train_crop_model.py` fits the pipeline, evaluates accuracy/classification report/confusion matrix, then saves artifacts to `backend/models/crop_recommender.pkl` with metrics JSON.
 
-Follow these steps:
+### 3.3 Diagnostics & Resilience
+- `backend/debug_mysql.py` probes connectivity, schema readiness, and CSV backups.
+- Startup hooks in `backend/app.py` log MySQL availability and sensor simulator status for fast troubleshooting.
 
+---
+
+## 4. Getting Started
+
+### 4.1 Prerequisites
+- Node.js 18+
+- pnpm or npm (project uses `pnpm` by default — npm works too)
+- Python 3.11+
+- MySQL 8.x instance (local or remote)
+
+### 4.2 Installation
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+git clone https://github.com/shantanushewale24/harit-samarth-app.git
+cd harit-samarth-app
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Frontend deps
+pnpm install   # or npm install
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+# Backend deps
+cd backend
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
-**Edit a file directly in GitHub**
+### 4.3 Environment Variables (`backend/.env`)
+```
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=harit
+MYSQL_PASSWORD=secret
+MYSQL_DATABASE=harit_samarth
+SUPABASE_URL=...
+SUPABASE_ANON_KEY=...
+WEATHER_API_KEY=91c921b2103f4226b63110342250212
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## 5. Running the Project
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Frontend
+```sh
+pnpm dev  # http://localhost:5173
+```
 
-## What technologies are used for this project?
+### Backend
+```sh
+cd backend
+.venv\Scripts\activate
+python app.py
+```
 
-This project is built with:
+### Train / Update the Crop Model
+```sh
+cd backend
+.venv\Scripts\activate
+python train_crop_model.py
+```
+Artifacts are saved under `backend/models/`.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
+## 6. Repository Layout (Highlights)
+```
+├── src/                # React pages, components, hooks, integrations
+├── backend/
+│   ├── app.py          # Flask server + dual-write soil health API
+│   ├── train_crop_model.py
+│   ├── debug_mysql.py  # CLI diagnostics
+│   └── models/         # Saved ML pipelines + metrics
+├── data/
+│   └── crop_recommendations.csv
+└── supabase/           # Supabase config + edge functions
+```
 
-Simply open [Lovable](https://lovable.dev/projects/438158a8-0f07-4998-9593-b1094e419f2f) and click on Share -> Publish.
+---
 
-## Can I connect a custom domain to my Lovable project?
+## 7. Deployment Notes
+- Frontend bundles via `pnpm build` and can be hosted on Vercel, Netlify, or any static host.
+- Backend targets environments with Python 3.11+, MySQL connectivity, and access to the trained model.
+- Run `backend/debug_mysql.py` before releases to verify DB health and CSV backups.
 
-Yes, you can!
+---
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## 8. Roadmap
+1. Integrate live weather + satellite indices for dynamic inputs.
+2. Expose the crop model through versioned API endpoints with caching.
+3. Expand the dataset with yield history and subsidy eligibility tags.

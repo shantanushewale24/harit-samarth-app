@@ -17,6 +17,11 @@ import time
 import json
 import csv
 import os
+from typing import Optional
+from dotenv import load_dotenv
+import requests
+import joblib
+import pandas as pd
 
 # Configure logging with better debug output
 logging.basicConfig(
@@ -28,6 +33,8 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
@@ -43,14 +50,32 @@ MYSQL_CONFIG = {
     'autocommit': True
 }
 
-# CSV file path
-CSV_PATH = 'data/sensor_readings.csv'
+# Paths
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR.parent / 'data'
+MODELS_DIR = BASE_DIR / 'models'
 
-# Ensure data directory exists
-os.makedirs('data', exist_ok=True)
+# CSV file path
+CSV_PATH = str(DATA_DIR / 'sensor_readings.csv')
+CROP_DATA_PATH = DATA_DIR / 'crop_recommendations.csv'
+CROP_MODEL_PATH = MODELS_DIR / 'crop_recommender.pkl'
+METRICS_PATH = MODELS_DIR / 'crop_recommender_metrics.json'
+
+# Ensure directories exist
+os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(MODELS_DIR, exist_ok=True)
+
+WEATHER_API_KEY = os.getenv('WEATHER_API_KEY', '91c921b2103f4226b63110342250212')
+WEATHER_API_URL = "http://api.weatherapi.com/v1/current.json"
 
 # Track MySQL availability
 mysql_available = False
+
+# Crop recommendation resources
+crop_model = None
+crop_dataset = None
+crop_profiles = {}
+crop_profiles_by_slug = {}
 
 def get_mysql_connection():
     """Get MySQL connection with error handling"""
@@ -213,6 +238,7 @@ def save_to_mysql(sensor_data, health_index, health_status, is_anomalous, anomal
 
 # Initialize database on startup
 init_database()
+load_crop_resources()
 
 # ML Analysis functions (same as before)
 def calculate_health_index(sensor_data):
@@ -326,10 +352,346 @@ def identify_critical_factors(sensor_data):
     
     return critical_factors
 
+
+# ---------------------------------------------------------------------------
+# Crop recommendation utilities (Weather + ML pipeline)
+# ---------------------------------------------------------------------------
+
+CROP_ENRICHMENT = {
+    "Rice": {
+        "vernacular": "धान",
+        "summary": "Thrives in standing water and humid monsoon belts.",
+        "expected_yield": "4-5 tons/hectare",
+        "duration": "120-150 days",
+        "management": [
+            "Maintain 5-7 cm of standing water during vegetative stage",
+            "Split nitrogen into three dressings to avoid lodging",
+            "Plan harvest when grains reach 20-22% moisture"
+        ]
+    },
+    "Wheat": {
+        "vernacular": "गेहूं",
+        "summary": "Prefers cool winters with well-drained loamy soils.",
+        "expected_yield": "3-4 tons/hectare",
+        "duration": "110-130 days",
+        "management": [
+            "Keep sowing depth 4-5 cm for uniform germination",
+            "Irrigate at crown-root initiation and flowering",
+            "Ensure timely rust surveillance in humid belts"
+        ]
+    },
+    "Soybean": {
+        "vernacular": "सोयाबीन",
+        "summary": "Nitrogen-fixing legume suited to warm semi-arid belts.",
+        "expected_yield": "2-3 tons/hectare",
+        "duration": "90-120 days",
+        "management": [
+            "Use well-inoculated seed to boost nodulation",
+            "Avoid waterlogging during pod fill",
+            "Harvest when 80% pods turn brown"
+        ]
+    },
+    "Groundnut": {
+        "vernacular": "मूंगफली",
+        "summary": "Requires friable sandy loam with assured pod development.",
+        "expected_yield": "2.5-3 tons/hectare",
+        "duration": "110-130 days",
+        "management": [
+            "Gypsum application at flowering improves pegging",
+            "Light irrigation after pegging avoids shrivelled kernels",
+            "Windrow plants for 2-3 days before threshing"
+        ]
+    },
+    "Cotton": {
+        "vernacular": "कपास",
+        "summary": "Deep-rooted crop for black soils with long frost-free period.",
+        "expected_yield": "1.8-2.2 tons lint/hectare",
+        "duration": "150-180 days",
+        "management": [
+            "Adopt square-retention sprays in high bollworm pressure",
+            "Maintain 70-80 cm row spacing for aeration",
+            "Schedule defoliant 10 days before picking"
+        ]
+    },
+    "Chickpea": {
+        "vernacular": "चना",
+        "summary": "Cool-season pulse suited to residual soil moisture.",
+        "expected_yield": "1.5-2 tons/hectare",
+        "duration": "100-120 days",
+        "management": [
+            "Seed treatment with Rhizobium for nodulation",
+            "Avoid heavy irrigation during flowering",
+            "Harvest when pods turn straw yellow"
+        ]
+    },
+    "Bajra": {
+        "vernacular": "बाजरा",
+        "summary": "Hardy millet for arid zones with erratic rainfall.",
+        "expected_yield": "2-2.5 tons/hectare",
+        "duration": "75-95 days",
+        "management": [
+            "Use short-duration hybrids for late sowing",
+            "Thin seedlings at 15 DAS for optimal tillers",
+            "Apply life-saving irrigation at booting"
+        ]
+    },
+    "Sugarcane": {
+        "vernacular": "गन्ना",
+        "summary": "Long-duration cash crop needing abundant water and nutrients.",
+        "expected_yield": "80-100 tons/hectare",
+        "duration": "270-330 days",
+        "management": [
+            "Trash mulching conserves moisture and controls weeds",
+            "Adopt drip + fertigation for higher recovery",
+            "Detrash at 150 days to reduce pest niches"
+        ]
+    }
+}
+
+
+def slugify_crop(name: str) -> str:
+    return name.lower().replace(' ', '-').replace('/', '-').replace('&', 'and')
+
+
+def build_crop_profiles(df: pd.DataFrame):
+    profiles = {}
+    if df is None or df.empty:
+        return profiles
+
+    grouped = df.groupby('recommended_crop').first().reset_index()
+    for _, row in grouped.iterrows():
+        crop_name = row['recommended_crop']
+        slug = slugify_crop(crop_name)
+        enrichment = CROP_ENRICHMENT.get(crop_name, {})
+        profile = {
+            'crop': crop_name,
+            'slug': slug,
+            'season': row.get('primary_season'),
+            'climate_zone': row.get('climate_zone'),
+            'soil_type': row.get('soil_type'),
+            'irrigation': row.get('irrigation'),
+            'risks': {
+                'wind': row.get('wind_risk'),
+                'drought': row.get('drought_risk'),
+                'flood': row.get('flood_risk'),
+            },
+            'ph_range': [row.get('ph_min'), row.get('ph_max')],
+            'altitude_m': row.get('altitude_m'),
+            'monsoon_intensity': row.get('monsoon_intensity'),
+            'summary': enrichment.get('summary', f"Suitable for {row.get('climate_zone')} conditions."),
+            'vernacular': enrichment.get('vernacular'),
+            'expected_yield': enrichment.get('expected_yield'),
+            'duration': enrichment.get('duration'),
+            'management': enrichment.get('management', []),
+        }
+        profiles[crop_name] = profile
+    return profiles
+
+
+def load_crop_resources():
+    global crop_model, crop_dataset, crop_profiles, crop_profiles_by_slug
+    try:
+        if CROP_MODEL_PATH.exists():
+            crop_model = joblib.load(CROP_MODEL_PATH)
+            logger.info("✅ Crop recommendation model loaded")
+        else:
+            logger.warning("Crop model file not found at %s", CROP_MODEL_PATH)
+            crop_model = None
+    except Exception as exc:
+        logger.warning("Unable to load crop model: %s", exc)
+        crop_model = None
+
+    try:
+        if CROP_DATA_PATH.exists():
+            crop_dataset = pd.read_csv(CROP_DATA_PATH)
+            logger.info("📈 Crop dataset loaded (%d rows)", len(crop_dataset))
+        else:
+            logger.warning("Crop dataset not found at %s", CROP_DATA_PATH)
+            crop_dataset = None
+    except Exception as exc:
+        logger.warning("Unable to load crop dataset: %s", exc)
+        crop_dataset = None
+
+    if crop_dataset is not None:
+        crop_profiles = build_crop_profiles(crop_dataset)
+        crop_profiles_by_slug = {profile['slug']: profile for profile in crop_profiles.values()}
+    else:
+        crop_profiles = {}
+        crop_profiles_by_slug = {}
+
+
+def get_weather_for_location(location: str) -> dict:
+    if not WEATHER_API_KEY:
+        raise ValueError("Weather API key missing. Set WEATHER_API_KEY env variable.")
+    params = {
+        'key': WEATHER_API_KEY,
+        'q': location,
+        'aqi': 'no'
+    }
+    response = requests.get(WEATHER_API_URL, params=params, timeout=10)
+    response.raise_for_status()
+    payload = response.json()
+    current = payload.get('current', {})
+    weather = {
+        'location': f"{payload['location']['name']}, {payload['location']['region']}",
+        'raw_location': payload['location'],
+        'condition': current.get('condition', {}).get('text'),
+        'description': f"Feels like {current.get('feelslike_c')}°C",
+        'temperature': current.get('temp_c'),
+        'humidity': current.get('humidity'),
+        'windSpeed': round((current.get('wind_kph', 0) or 0) * 0.277778, 2),
+        'rainfall': current.get('precip_mm', 0) or 0,
+        'visibility': current.get('vis_km'),
+        'last_updated': current.get('last_updated')
+    }
+    return weather
+
+
+def select_region_profile(user_location: str, weather: Optional[dict]):
+    if crop_dataset is None or crop_dataset.empty:
+        raise ValueError("Crop dataset unavailable")
+
+    search_terms = [user_location]
+    if weather and weather.get('raw_location'):
+        search_terms.extend([
+            weather['raw_location'].get('region'),
+            weather['raw_location'].get('name'),
+            weather['raw_location'].get('tz_id')
+        ])
+
+    for term in filter(None, search_terms):
+        mask = crop_dataset['state'].str.contains(term, case=False, na=False)
+        if mask.any():
+            return crop_dataset[mask].iloc[0]
+        mask = crop_dataset['region'].str.contains(term, case=False, na=False)
+        if mask.any():
+            return crop_dataset[mask].iloc[0]
+
+    return crop_dataset.sample(1, random_state=42).iloc[0]
+
+
+def prepare_feature_vector(row: pd.Series, weather: Optional[dict]):
+    feature = row.drop(labels=['recommended_crop']).to_dict()
+
+    if weather:
+        temp = weather.get('temperature')
+        if temp is not None:
+            feature['temp_min_c'] = temp - 2
+            feature['temp_max_c'] = temp + 2
+        humidity = weather.get('humidity')
+        if humidity is not None:
+            feature['humidity_min_pct'] = max(0, humidity - 10)
+            feature['humidity_max_pct'] = min(100, humidity + 10)
+        rainfall = weather.get('rainfall')
+        if rainfall is not None:
+            feature['rainfall_min_mm'] = max(0, rainfall * 0.8)
+            feature['rainfall_max_mm'] = rainfall * 1.2 + 1
+
+    return feature
+
+
+def score_crops(feature: dict):
+    if crop_model is None:
+        raise ValueError("Crop model not loaded")
+
+    feature_df = pd.DataFrame([feature])
+    rankings = []
+
+    if hasattr(crop_model, 'predict_proba'):
+        probabilities = crop_model.predict_proba(feature_df)[0]
+        classes = crop_model.classes_
+        rankings = sorted(zip(classes, probabilities), key=lambda x: x[1], reverse=True)
+    else:
+        prediction = crop_model.predict(feature_df)
+        rankings = [(prediction[0], 1.0)]
+
+    recommendations = []
+    for crop_name, probability in rankings[:3]:
+        profile = crop_profiles.get(crop_name, {'slug': slugify_crop(crop_name)})
+        recommendations.append({
+            'crop': crop_name,
+            'slug': profile.get('slug', slugify_crop(crop_name)),
+            'vernacular': profile.get('vernacular'),
+            'season': profile.get('season'),
+            'summary': profile.get('summary'),
+            'expected_yield': profile.get('expected_yield'),
+            'duration': profile.get('duration'),
+            'soil_type': profile.get('soil_type'),
+            'climate_zone': profile.get('climate_zone'),
+            'irrigation': profile.get('irrigation'),
+            'risks': profile.get('risks'),
+            'management': profile.get('management', []),
+            'suitability': int(round(float(probability) * 100))
+        })
+
+    return recommendations
+
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
     return jsonify({'status': 'ok', 'service': 'soil-health-api'}), 200
+
+
+@app.route('/api/crops/recommendations', methods=['POST'])
+def crop_recommendations():
+    if crop_model is None or crop_dataset is None:
+        return jsonify({'error': 'Crop recommendation model is unavailable. Train the model and restart the backend.'}), 503
+
+    payload = request.get_json() or {}
+    location = payload.get('location') or payload.get('city')
+    if not location:
+        return jsonify({'error': 'Location is required to fetch localized weather data.'}), 400
+
+    try:
+        weather = get_weather_for_location(location)
+        profile_row = select_region_profile(location, weather)
+        feature_vector = prepare_feature_vector(profile_row, weather)
+        recommendations = score_crops(feature_vector)
+
+        response = {
+            'weather': {
+                'location': weather.get('location'),
+                'condition': weather.get('condition'),
+                'description': weather.get('description'),
+                'temperature': weather.get('temperature'),
+                'humidity': weather.get('humidity'),
+                'windSpeed': weather.get('windSpeed'),
+                'rainfall': weather.get('rainfall'),
+                'last_updated': weather.get('last_updated')
+            },
+            'recommendations': recommendations,
+            'source_region': {
+                'region': profile_row.get('region'),
+                'state': profile_row.get('state'),
+                'climate_zone': profile_row.get('climate_zone'),
+                'primary_season': profile_row.get('primary_season'),
+                'monsoon_intensity': profile_row.get('monsoon_intensity')
+            },
+            'generated_at': datetime.utcnow().isoformat() + 'Z'
+        }
+        return jsonify(response), 200
+    except requests.HTTPError as http_err:
+        logger.error("Weather API failure: %s", http_err)
+        return jsonify({'error': 'Unable to fetch weather data', 'details': str(http_err)}), 502
+    except Exception as exc:
+        logger.exception("Crop recommendation pipeline failed")
+        return jsonify({'error': 'Failed to generate crop recommendations', 'details': str(exc)}), 500
+
+
+@app.route('/api/crops/details/<slug>', methods=['GET'])
+def crop_details(slug: str):
+    if not crop_profiles_by_slug:
+        return jsonify({'error': 'Crop knowledge base unavailable'}), 503
+
+    profile = crop_profiles_by_slug.get(slug)
+    if not profile:
+        # Attempt lookup by crop name
+        matching = next((p for p in crop_profiles.values() if slugify_crop(p['crop']) == slug), None)
+        if not matching:
+            return jsonify({'error': 'Crop not found'}), 404
+        profile = matching
+
+    return jsonify(profile), 200
 
 @app.route('/api/soil-health/analyze', methods=['POST'])
 def analyze_soil():

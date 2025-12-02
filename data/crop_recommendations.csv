@@ -1,0 +1,20 @@
+region,state,climate_zone,primary_season,monsoon_intensity,rainfall_min_mm,rainfall_max_mm,temp_min_c,temp_max_c,humidity_min_pct,humidity_max_pct,soil_type,ph_min,ph_max,irrigation,altitude_m,wind_risk,drought_risk,flood_risk,recommended_crop
+Malwa, Punjab,Indo-Gangetic Plains,Kharif,High,600,900,24,34,60,85,Loamy,6.5,7.5,Assured,260,Medium,Low,Medium,Rice
+Malwa, Punjab,Indo-Gangetic Plains,Rabi,Medium,250,400,12,24,45,70,Loamy,6.3,7.4,Assured,260,Low,Low,Low,Wheat
+Western Rajasthan,Rajasthan,Arid,Monsoon,Sparse,150,300,28,40,25,45,Sandy,7.2,8.2,Limited,330,High,High,Low,Bajra
+Saurashtra,Gujarat,Semi-Arid,Kharif,Medium,350,600,26,34,40,60,Sandy Loam,6.8,7.8,Supplemental,140,Medium,Medium,Low,Groundnut
+Vidarbha,Maharashtra,Deccan Plateau,Kharif,Medium,700,1100,23,32,55,80,Black Clay,6.5,7.8,Rainfed,300,Low,Medium,Medium,Cotton
+Marathwada,Maharashtra,Dryland,Rabi,Low,250,450,18,30,35,55,Red Loam,6.0,7.2,Limited,500,Medium,High,Low,Chickpea
+Krishna Delta,Andhra Pradesh,Coastal Humid,Kharif,Very High,900,1300,25,33,70,90,Clay Loam,6.2,7.0,Assured,20,Low,Low,High,Paddy
+Rayalaseema,Andhra Pradesh,Semi-Arid,Rabi,Low,250,500,20,32,35,55,Red Sandy,6.3,7.3,Limited,450,Medium,High,Low,Groundnut
+Cauvery Delta,Tamil Nadu,Tropical Wet,Kharif,High,800,1200,24,32,65,85,Alluvial,6.2,7.2,Assured,40,Low,Low,Medium,Sugarcane
+Erode,Tamil Nadu,Dry Tropical,Rabi,Medium,400,650,20,30,45,65,Red Loam,6.0,7.0,Supplemental,280,Medium,Medium,Low,Millet
+Palakkad,Kerala,Humid Tropical,Kharif,Very High,1500,2500,23,30,75,95,Laterite,5.5,6.5,Assured,90,Low,Low,High,Arecanut
+North Bengal,West Bengal,Sub-Humid,Kharif,High,1000,1600,25,33,70,90,Alluvial,6.0,7.0,Assured,35,Low,Low,High,Jute
+Sundarbans,West Bengal,Coastal Saline,Kharif,Very High,1400,1800,26,34,75,95,Clay Saline,6.8,8.2,Lift,5,Low,Low,High,SalineRice
+Upper Assam,Assam,Humid Subtropical,Kharif,High,1300,2000,22,30,70,95,Alluvial,5.5,6.5,Assured,80,Low,Low,High,Tea
+Central Plateau,Madhya Pradesh,Central Highlands,Kharif,Medium,500,800,24,33,45,70,Black Clay,6.5,7.5,Rainfed,450,Medium,Medium,Low,Soybean
+Gangetic East,Uttar Pradesh,Indo-Gangetic Plains,Rabi,Medium,300,600,10,22,40,65,Alluvial,6.4,7.6,Assured,120,Low,Low,Low,Lentil
+Bundelkhand,Uttar Pradesh,Semi-Arid,Rabi,Low,200,400,16,28,30,55,Sandy Loam,6.5,7.5,Limited,300,High,High,Low,Mustard
+Northern Karnataka,Karnataka,Dry Tropical,Kharif,Mid,450,750,24,33,40,60,Red Sandy,6.0,7.0,Limited,600,Medium,High,Low,Ragi
+Konkan,Maharashtra,Coastal Humid,Kharif,Very High,2000,3500,24,31,80,98,Lateritic,5.5,6.3,Assured,50,Low,Low,High,Cashew

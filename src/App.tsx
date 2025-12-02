@@ -7,6 +7,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import Index from "./pages/Index";
 import SoilHealth from "./pages/SoilHealth";
 import Crops from "./pages/Crops";
+import CropDetails from "./pages/CropDetails";
 import Hardware from "./pages/Hardware";
 import Subsidies from "./pages/Subsidies";
 import NotFound from "./pages/NotFound";
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/soil-health" element={<SoilHealth />} />
             <Route path="/crops" element={<Crops />} />
+            <Route path="/crops/:slug" element={<CropDetails />} />
             <Route path="/hardware" element={<Hardware />} />
             <Route path="/subsidies" element={<Subsidies />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
