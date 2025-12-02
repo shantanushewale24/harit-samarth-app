@@ -4,7 +4,7 @@ import heroImage from "@/assets/hero-farmland.jpg";
 
 const Hero = () => {
   return (
-    <section className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
+    <section id="home" className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
       <div 
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${heroImage})` }}
@@ -15,13 +15,13 @@ const Hero = () => {
       <div className="container relative z-10 mx-auto px-4 py-20">
         <div className="max-w-2xl">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-            किसान मित्र
+            Agri bio
           </h1>
           <p className="text-xl md:text-2xl text-white/95 mb-4 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-100">
-            Your Digital Farming Assistant
+            Your Smart Agriculture Partner
           </p>
           <p className="text-lg text-white/90 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200">
-            Get personalized crop recommendations, soil health reports, subsidy support, and expert advice in Hindi, Marathi, and English.
+            IoT-powered farming with real-time soil monitoring, crop recommendations, hardware integration, and multilingual support in Hindi, Marathi, and English.
           </p>
           
           <div className="flex flex-wrap gap-4 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300">
