@@ -1,5 +1,6 @@
 import { Leaf, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import {
   Sheet,
   SheetContent,
@@ -8,20 +9,20 @@ import {
 
 const Navbar = () => {
   const navItems = [
-    { label: "Home", href: "#home" },
-    { label: "Soil Health", href: "#soil" },
-    { label: "Crops", href: "#crops" },
-    { label: "Hardware", href: "#hardware" },
-    { label: "Subsidies", href: "#subsidies" },
+    { label: "Home", href: "/" },
+    { label: "Soil Health", href: "/soil-health" },
+    { label: "Crops", href: "/crops" },
+    { label: "Hardware", href: "/hardware" },
+    { label: "Subsidies", href: "/subsidies" },
   ];
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
       <div className="container flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2">
           <Leaf className="h-8 w-8 text-primary" />
           <span className="text-xl font-bold text-foreground">Agri bio</span>
-        </div>
+        </Link>
 
         {/* Mobile Menu */}
         <Sheet>
@@ -33,13 +34,13 @@ const Navbar = () => {
           <SheetContent side="right" className="w-[280px]">
             <div className="flex flex-col gap-4 mt-8">
               {navItems.map((item) => (
-                <a
+                <Link
                   key={item.href}
-                  href={item.href}
+                  to={item.href}
                   className="text-lg font-medium text-foreground hover:text-primary transition-colors"
                 >
                   {item.label}
-                </a>
+                </Link>
               ))}
             </div>
           </SheetContent>
@@ -48,13 +49,13 @@ const Navbar = () => {
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-6">
           {navItems.map((item) => (
-            <a
+            <Link
               key={item.href}
-              href={item.href}
+              to={item.href}
               className="text-sm font-medium text-foreground hover:text-primary transition-colors"
             >
               {item.label}
-            </a>
+            </Link>
           ))}
         </div>
       </div>

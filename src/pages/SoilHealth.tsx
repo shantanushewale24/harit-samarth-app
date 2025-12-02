@@ -1,17 +1,17 @@
 import Navbar from "@/components/Navbar";
-import Hero from "@/components/Hero";
+import SoilHealthReport from "@/components/SoilHealthReport";
 import ChatbotWidget from "@/components/ChatbotWidget";
 
-const Index = () => {
+const SoilHealth = () => {
   return (
     <main className="min-h-screen">
       <Navbar />
       <div className="pt-16">
-        <Hero />
+        <SoilHealthReport />
         <ChatbotWidget />
       </div>
     </main>
   );
 };
 
-export default Index;
+export default SoilHealth;
