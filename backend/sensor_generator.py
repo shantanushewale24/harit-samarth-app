@@ -1,6 +1,6 @@
 """
 Real-time Sensor Data Generator
-Generates realistic sensor data every minute and sends to API
+Generates realistic sensor data every minute and publishes via MQTT
 """
 
 import requests
@@ -11,11 +11,24 @@ import random
 import threading
 import csv
 from pathlib import Path
+import paho.mqtt.client as mqtt
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Configuration
 API_URL = "http://localhost:5000/api/soil-health/analyze"
+MQTT_BROKER = "localhost"
+MQTT_PORT = 1883
+MQTT_TOPIC = "harit-samarth/sensor/data"
 CSV_PATH = "data/sensor_readings.csv"
 UPDATE_INTERVAL = 60  # Update every 60 seconds (1 minute)
+USE_MQTT = True  # Set to False to use direct API instead
 
 # Base sensor reading
 BASE_READINGS = {
@@ -40,19 +53,36 @@ VARIATIONS = {
 }
 
 class SensorDataGenerator:
-    """Generates and sends realistic sensor data"""
+    """Generates and sends realistic sensor data via MQTT or API"""
     
-    def __init__(self, api_url=API_URL, csv_path=CSV_PATH, interval=UPDATE_INTERVAL):
+    def __init__(self, api_url=API_URL, mqtt_broker=MQTT_BROKER, mqtt_port=MQTT_PORT, 
+                 mqtt_topic=MQTT_TOPIC, csv_path=CSV_PATH, interval=UPDATE_INTERVAL, use_mqtt=USE_MQTT):
         self.api_url = api_url
+        self.mqtt_broker = mqtt_broker
+        self.mqtt_port = mqtt_port
+        self.mqtt_topic = mqtt_topic
         self.csv_path = csv_path
         self.interval = interval
+        self.use_mqtt = use_mqtt
+        
         self.running = False
         self.last_reading = BASE_READINGS.copy()
         self.readings_count = 0
         self.last_update_time = None
         
+        # MQTT setup
+        self.mqtt_client = None
+        self.mqtt_connected = False
+        
         # Create CSV file if it doesn't exist
         self._init_csv()
+        
+        # Load historical data to seed the generator
+        self._load_historical_data()
+        
+        # Initialize MQTT if enabled
+        if self.use_mqtt:
+            self._init_mqtt()
     
     def _init_csv(self):
         """Initialize CSV file with headers"""
@@ -66,6 +96,126 @@ class SensorDataGenerator:
                 ])
                 writer.writeheader()
             print(f"✓ Created CSV file: {self.csv_path}")
+    
+    def _load_historical_data(self):
+        """Load last reading from API to seed generator with historical data"""
+        try:
+            # Get latest reading from backend API
+            latest_url = "http://localhost:5000/api/soil-health/latest"
+            
+            # Retry a few times in case backend is starting up
+            for attempt in range(3):
+                try:
+                    response = requests.get(latest_url, timeout=5)
+                    if response.status_code == 200:
+                        data = response.json()
+                        last_reading = data.get('sensor_readings', {})
+                        
+                        if last_reading:
+                            self.last_reading = {
+                                'N': float(last_reading.get('N', BASE_READINGS['N'])),
+                                'P': float(last_reading.get('P', BASE_READINGS['P'])),
+                                'K': float(last_reading.get('K', BASE_READINGS['K'])),
+                                'CO2': float(last_reading.get('CO2', BASE_READINGS['CO2'])),
+                                'Temperature': float(last_reading.get('Temperature', BASE_READINGS['Temperature'])),
+                                'Moisture': float(last_reading.get('Moisture', BASE_READINGS['Moisture'])),
+                                'pH': float(last_reading.get('pH', BASE_READINGS['pH']))
+                            }
+                            print(f"✓ Loaded historical data from API")
+                            print(f"  Last reading: N={self.last_reading['N']}, P={self.last_reading['P']}, K={self.last_reading['K']}")
+                            return
+                    elif response.status_code == 404:
+                        # No data yet, use defaults
+                        print(f"ℹ No historical data available (first run), using defaults")
+                        return
+                    else:
+                        print(f"  Attempt {attempt+1}: API returned {response.status_code}, retrying...")
+                        time.sleep(1)
+                
+                except requests.exceptions.RequestException as e:
+                    if attempt < 2:
+                        print(f"  Attempt {attempt+1}: Connection error, retrying... ({str(e)})")
+                        time.sleep(1)
+                    else:
+                        print(f"✗ Failed to load historical data: {str(e)}")
+                        print(f"✓ Using default BASE_READINGS, will start fresh")
+        
+        except Exception as e:
+            print(f"✗ Error loading historical data: {str(e)}")
+            print(f"✓ Using default BASE_READINGS")
+    
+    def _init_mqtt(self):
+        """Initialize MQTT client"""
+        try:
+            self.mqtt_client = mqtt.Client(client_id="sensor-publisher-01")
+            self.mqtt_client.on_connect = self._on_mqtt_connect
+            self.mqtt_client.on_disconnect = self._on_mqtt_disconnect
+            self.mqtt_client.on_publish = self._on_mqtt_publish
+            
+            print(f"Connecting to MQTT broker at {self.mqtt_broker}:{self.mqtt_port}...")
+            self.mqtt_client.connect(self.mqtt_broker, self.mqtt_port, keepalive=60)
+            self.mqtt_client.loop_start()  # Start MQTT network loop
+            
+            # Wait for connection
+            timeout = 5
+            start = time.time()
+            while not self.mqtt_connected and (time.time() - start) < timeout:
+                time.sleep(0.1)
+            
+            if self.mqtt_connected:
+                print(f"✓ MQTT connected, will publish to {self.mqtt_topic}")
+            else:
+                print(f"⚠ MQTT connection timeout, will fall back to API")
+                self.use_mqtt = False
+        
+        except Exception as e:
+            print(f"⚠ MQTT initialization failed: {str(e)}")
+            print(f"  Will fall back to API mode")
+            self.use_mqtt = False
+    
+    def _on_mqtt_connect(self, client, userdata, flags, rc):
+        """MQTT connect callback"""
+        if rc == 0:
+            self.mqtt_connected = True
+            print(f"✓ MQTT Publisher connected")
+        else:
+            self.mqtt_connected = False
+            print(f"✗ MQTT connection failed: {rc}")
+    
+    def _on_mqtt_disconnect(self, client, userdata, rc):
+        """MQTT disconnect callback"""
+        self.mqtt_connected = False
+        if rc != 0:
+            print(f"⚠ MQTT disconnected: {rc}")
+    
+    def _on_mqtt_publish(self, client, userdata, mid):
+        """MQTT publish callback"""
+        pass  # Silent callback
+    
+    def _publish_via_mqtt(self, reading):
+        """Publish sensor reading via MQTT"""
+        try:
+            if not self.mqtt_client or not self.mqtt_connected:
+                return False
+            
+            message = {
+                'timestamp': datetime.now().isoformat(),
+                'publisher_id': 'sensor-publisher-01',
+                'sensor_readings': reading
+            }
+            
+            payload = json.dumps(message)
+            result = self.mqtt_client.publish(self.mqtt_topic, payload, qos=1)
+            
+            if result.rc == mqtt.MQTT_ERR_SUCCESS:
+                return True
+            else:
+                print(f"✗ MQTT publish failed: {mqtt.error_string(result.rc)}")
+                return False
+        
+        except Exception as e:
+            print(f"✗ MQTT publish error: {str(e)}")
+            return False
     
     def generate_reading(self):
         """Generate next sensor reading with realistic variations"""
@@ -146,10 +296,17 @@ class SensorDataGenerator:
     def start(self):
         """Start generating sensor data"""
         self.running = True
+        mode = "MQTT Publisher" if self.use_mqtt and self.mqtt_connected else "API Direct"
+        
         print(f"\n{'='*60}")
         print(f"  SENSOR DATA GENERATOR STARTED")
         print(f"{'='*60}")
-        print(f"API URL: {self.api_url}")
+        print(f"Mode: {mode}")
+        if self.use_mqtt:
+            print(f"MQTT Broker: {self.mqtt_broker}:{self.mqtt_port}")
+            print(f"Topic: {self.mqtt_topic}")
+        else:
+            print(f"API URL: {self.api_url}")
         print(f"CSV Path: {self.csv_path}")
         print(f"Update Interval: {self.interval} seconds")
         print(f"{'='*60}\n")
@@ -168,12 +325,22 @@ class SensorDataGenerator:
                 self.readings_count += 1
                 reading = self.generate_reading()
                 
-                # Send to API
-                analysis = self.send_to_api(reading)
+                # Send via MQTT or API
+                if self.use_mqtt and self.mqtt_connected:
+                    # Publish via MQTT (subscriber will handle API call)
+                    success = self._publish_via_mqtt(reading)
+                else:
+                    # Fallback to direct API call
+                    analysis = self.send_to_api(reading)
+                    success = analysis is not None
                 
                 # Save to CSV
-                if analysis:
-                    self.save_to_csv(reading, analysis)
+                if success:
+                    if self.use_mqtt and self.mqtt_connected:
+                        self.save_to_csv(reading, None)
+                    else:
+                        self.save_to_csv(reading, analysis)
+                
                 
                 # Calculate next update time
                 self.last_update_time = datetime.now()

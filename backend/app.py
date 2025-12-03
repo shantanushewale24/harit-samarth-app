@@ -238,7 +238,6 @@ def save_to_mysql(sensor_data, health_index, health_status, is_anomalous, anomal
 
 # Initialize database on startup
 init_database()
-load_crop_resources()
 
 # ML Analysis functions (same as before)
 def calculate_health_index(sensor_data):
@@ -625,6 +624,11 @@ def score_crops(feature: dict):
         })
 
     return recommendations
+
+
+# Load crop resources after all functions are defined
+load_crop_resources()
+
 
 @app.route('/health', methods=['GET'])
 def health_check():

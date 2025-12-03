@@ -1,13 +1,13 @@
 import Navbar from "@/components/Navbar";
-import HardwareModule from "@/components/HardwareModule";
+import SensorMonitoring from "@/components/SensorMonitoring";
 import ChatbotWidget from "@/components/ChatbotWidget";
 
 const Hardware = () => {
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
       <Navbar />
       <div className="pt-16">
-        <HardwareModule />
+        <SensorMonitoring />
         <ChatbotWidget />
       </div>
     </main>

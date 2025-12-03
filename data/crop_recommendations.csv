@@ -1,6 +1,6 @@
 region,state,climate_zone,primary_season,monsoon_intensity,rainfall_min_mm,rainfall_max_mm,temp_min_c,temp_max_c,humidity_min_pct,humidity_max_pct,soil_type,ph_min,ph_max,irrigation,altitude_m,wind_risk,drought_risk,flood_risk,recommended_crop
-Malwa, Punjab,Indo-Gangetic Plains,Kharif,High,600,900,24,34,60,85,Loamy,6.5,7.5,Assured,260,Medium,Low,Medium,Rice
-Malwa, Punjab,Indo-Gangetic Plains,Rabi,Medium,250,400,12,24,45,70,Loamy,6.3,7.4,Assured,260,Low,Low,Low,Wheat
+Malwa,Punjab,Indo-Gangetic Plains,Kharif,High,600,900,24,34,60,85,Loamy,6.5,7.5,Assured,260,Medium,Low,Medium,Rice
+Malwa,Punjab,Indo-Gangetic Plains,Rabi,Medium,250,400,12,24,45,70,Loamy,6.3,7.4,Assured,260,Low,Low,Low,Wheat
 Western Rajasthan,Rajasthan,Arid,Monsoon,Sparse,150,300,28,40,25,45,Sandy,7.2,8.2,Limited,330,High,High,Low,Bajra
 Saurashtra,Gujarat,Semi-Arid,Kharif,Medium,350,600,26,34,40,60,Sandy Loam,6.8,7.8,Supplemental,140,Medium,Medium,Low,Groundnut
 Vidarbha,Maharashtra,Deccan Plateau,Kharif,Medium,700,1100,23,32,55,80,Black Clay,6.5,7.8,Rainfed,300,Low,Medium,Medium,Cotton
@@ -18,3 +18,39 @@ Gangetic East,Uttar Pradesh,Indo-Gangetic Plains,Rabi,Medium,300,600,10,22,40,65
 Bundelkhand,Uttar Pradesh,Semi-Arid,Rabi,Low,200,400,16,28,30,55,Sandy Loam,6.5,7.5,Limited,300,High,High,Low,Mustard
 Northern Karnataka,Karnataka,Dry Tropical,Kharif,Mid,450,750,24,33,40,60,Red Sandy,6.0,7.0,Limited,600,Medium,High,Low,Ragi
 Konkan,Maharashtra,Coastal Humid,Kharif,Very High,2000,3500,24,31,80,98,Lateritic,5.5,6.3,Assured,50,Low,Low,High,Cashew
+Nashik,Maharashtra,Semi-Arid,Rabi,Low,450,700,18,28,40,65,Red Loam,6.2,7.0,Supplemental,650,Low,Medium,Low,Onion
+Nashik,Maharashtra,Semi-Arid,Rabi,Low,450,700,18,28,40,65,Red Loam,6.2,7.0,Supplemental,650,Low,Medium,Low,Wheat
+Nashik,Maharashtra,Semi-Arid,Annual,Medium,500,800,16,30,35,70,Red Loam,6.1,7.1,Supplemental,650,Low,Low,Low,Grapes
+Nashik,Maharashtra,Deccan Plateau,Kharif,Medium,600,900,24,32,50,75,Black Clay,6.3,7.2,Rainfed,680,Medium,Medium,Low,Cotton
+Nashik,Maharashtra,Semi-Arid,Summer,Low,200,400,28,35,30,55,Red Loam,6.0,7.0,Supplemental,650,High,High,Low,Sugarcane
+Pune,Maharashtra,Semi-Arid,Rabi,Low,500,750,16,28,35,65,Red Sandy,6.3,7.2,Limited,560,Low,Medium,Low,Jowar
+Aurangabad,Maharashtra,Deccan Plateau,Kharif,Medium,600,900,23,32,50,75,Black Clay,6.4,7.4,Rainfed,370,Medium,Medium,Low,Soybean
+Aurangabad,Maharashtra,Dryland,Rabi,Low,300,500,18,28,30,60,Red Loam,6.0,7.1,Limited,370,Medium,High,Low,Gram
+Aurangabad,Maharashtra,Semi-Arid,Rabi,Low,300,500,16,28,35,60,Red Sandy,6.1,7.2,Limited,370,Low,Medium,Low,Onion
+Indore,Madhya Pradesh,Central Highlands,Kharif,Medium,700,1000,24,33,50,75,Black Clay,6.5,7.5,Rainfed,550,Medium,Low,Low,Soybean
+Indore,Madhya Pradesh,Central Highlands,Rabi,Medium,400,650,12,24,40,65,Black Clay,6.4,7.6,Limited,550,Low,Low,Low,Wheat
+Indore,Madhya Pradesh,Central Highlands,Kharif,Medium,700,1000,24,33,50,75,Black Clay,6.5,7.5,Rainfed,550,Medium,Low,Low,Cotton
+Ujjain,Madhya Pradesh,Semi-Arid,Rabi,Low,300,500,14,26,35,60,Sandy Loam,6.3,7.4,Limited,520,Low,High,Low,Gram
+Bhopal,Madhya Pradesh,Central Highlands,Kharif,Medium,650,950,24,32,50,75,Black Clay,6.4,7.4,Rainfed,500,Medium,Low,Low,Lentil
+Jabalpur,Madhya Pradesh,Central Highlands,Kharif,High,750,1100,24,33,60,80,Black Clay,6.5,7.5,Rainfed,400,Low,Low,Medium,Rice
+Ludhiana,Punjab,Indo-Gangetic Plains,Rabi,Low,200,350,8,20,35,60,Loamy,6.5,7.5,Assured,220,Low,Low,Low,Wheat
+Ludhiana,Punjab,Indo-Gangetic Plains,Kharif,High,500,800,24,34,55,80,Loamy,6.4,7.4,Assured,220,Medium,Low,Medium,Rice
+Amritsar,Punjab,Indo-Gangetic Plains,Rabi,Low,150,300,6,18,30,55,Loamy,6.5,7.5,Assured,200,Medium,High,Low,Wheat
+Amritsar,Punjab,Indo-Gangetic Plains,Kharif,Medium,400,700,22,32,50,75,Loamy,6.4,7.4,Assured,200,Medium,Low,Low,Corn
+Jaipur,Rajasthan,Semi-Arid,Rabi,Low,300,500,14,26,30,55,Sandy Loam,7.0,8.0,Limited,430,High,High,Low,Gram
+Jaipur,Rajasthan,Arid,Summer,Sparse,100,200,30,42,20,40,Sandy,7.3,8.3,Limited,430,High,High,Low,Bajra
+Jodhpur,Rajasthan,Arid,Monsoon,Sparse,200,400,28,40,25,50,Sandy,7.2,8.2,Limited,250,High,High,Low,Bajra
+Udaipur,Rajasthan,Semi-Arid,Kharif,Medium,500,800,24,33,45,70,Sandy Loam,6.8,7.8,Limited,550,Medium,Medium,Low,Cotton
+Udaipur,Rajasthan,Semi-Arid,Rabi,Low,250,450,16,28,35,60,Sandy Loam,6.7,7.7,Limited,550,Low,High,Low,Gram
+Vadodara,Gujarat,Semi-Arid,Kharif,Medium,600,900,26,34,45,70,Sandy Loam,6.8,7.8,Supplemental,110,Medium,Low,Low,Cotton
+Vadodara,Gujarat,Semi-Arid,Rabi,Low,250,450,18,30,35,60,Sandy Loam,6.7,7.7,Limited,110,Low,Medium,Low,Gram
+Ahmedabad,Gujarat,Semi-Arid,Kharif,Medium,400,700,26,35,40,65,Sandy,6.9,7.9,Supplemental,50,Medium,Medium,Low,Groundnut
+Ahmedabad,Gujarat,Semi-Arid,Rabi,Low,200,400,16,28,30,55,Sandy Loam,6.8,7.8,Limited,50,Medium,High,Low,Mustard
+Rajkot,Gujarat,Semi-Arid,Kharif,Low,300,600,26,36,35,60,Sandy,7.0,8.0,Limited,130,High,High,Low,Bajra
+Surat,Gujarat,Coastal Humid,Kharif,Very High,1000,1500,26,33,70,90,Clay,6.5,7.5,Assured,20,Low,Low,High,Rice
+Nagpur,Maharashtra,Deccan Plateau,Kharif,Medium,700,1100,24,33,55,80,Black Clay,6.5,7.8,Rainfed,310,Low,Medium,Low,Cotton
+Nagpur,Maharashtra,Deccan Plateau,Rabi,Low,300,500,16,28,35,60,Black Clay,6.4,7.7,Limited,310,Medium,High,Low,Gram
+Amravati,Maharashtra,Deccan Plateau,Kharif,Medium,700,1000,23,32,55,75,Black Clay,6.5,7.8,Rainfed,350,Low,Medium,Low,Cotton
+Amravati,Maharashtra,Deccan Plateau,Rabi,Low,300,500,17,28,35,65,Black Clay,6.4,7.7,Limited,350,Low,High,Low,Chickpea
+Sangli,Maharashtra,Semi-Arid,Rabi,Low,400,650,16,28,40,65,Red Loam,6.2,7.0,Supplemental,700,Low,Medium,Low,Sugarcane
+Satara,Maharashtra,Semi-Arid,Annual,Medium,700,1000,18,28,50,75,Red Loam,6.3,7.1,Supplemental,640,Low,Low,Low,Grapes

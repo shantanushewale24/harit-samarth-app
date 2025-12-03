@@ -8,7 +8,7 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_predict, StratifiedKFold
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 
@@ -72,21 +72,22 @@ def train_model():
     X = df[feature_cols]
     y = df[target_col]
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
-        test_size=0.25,
-        random_state=42,
-        stratify=y,
-    )
-
+    # Use k-fold cross-validation for small datasets
+    # n_splits cannot exceed the minimum class frequency
+    min_class_freq = y.value_counts().min()
+    n_splits = max(2, min(3, min_class_freq))
+    kfold = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+    
     pipeline = build_pipeline(categorical_cols)
-    pipeline.fit(X_train, y_train)
+    
+    # Use cross-validation predictions for metrics
+    y_pred = cross_val_predict(pipeline, X, y, cv=kfold)
+    accuracy = accuracy_score(y, y_pred)
+    report = classification_report(y, y_pred, output_dict=True, zero_division=0)
+    matrix = confusion_matrix(y, y_pred, labels=sorted(y.unique()))
 
-    y_pred = pipeline.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    report = classification_report(y_test, y_pred, output_dict=True)
-    matrix = confusion_matrix(y_test, y_pred, labels=sorted(y.unique()))
+    # Fit final model on entire dataset
+    pipeline.fit(X, y)
 
     MODEL_DIR.mkdir(exist_ok=True)
     joblib.dump(pipeline, MODEL_PATH)
@@ -96,8 +97,9 @@ def train_model():
         "classification_report": report,
         "confusion_matrix_labels": sorted(y.unique()),
         "confusion_matrix": matrix.tolist(),
-        "train_samples": int(len(X_train)),
-        "test_samples": int(len(X_test)),
+        "train_samples": int(len(X)),
+        "test_samples": int(len(X)),
+        "cv_folds": kfold.get_n_splits(),
     }
 
     with open(METRICS_PATH, "w", encoding="utf-8") as f:
@@ -105,7 +107,8 @@ def train_model():
 
     print(f"Model saved to {MODEL_PATH}")
     print(f"Metrics saved to {METRICS_PATH}")
-    print(f"Test Accuracy: {accuracy:.3f}")
+    print(f"CV Accuracy: {accuracy:.3f}")
+    print(f"Classes: {sorted(y.unique())}")
 
 
 if __name__ == "__main__":
